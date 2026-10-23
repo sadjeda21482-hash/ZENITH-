@@ -1,6 +1,6 @@
 // ==========================================
-// ZENITH MEDICAL BATTLE 🧬
-// Interactive medical quiz + Supabase
+// ZENITH MEDICAL BATTLE
+// Medical Quiz + Supabase Leaderboard
 // ==========================================
 
 const SUPABASE_URL = "https://hjzrlmqwfbgamvqpttfs.supabase.co";
@@ -8,9 +8,9 @@ const SUPABASE_KEY = "sb_publishable_ofgWlO9nXnY1Bwil9je2hw_Bilxbahe";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------- DOM ELEMENTS ----------
 const $ = (id) => document.getElementById(id);
 
+// DOM
 const homeScreen = $("homeScreen");
 const gameScreen = $("gameScreen");
 const resultScreen = $("resultScreen");
@@ -38,7 +38,6 @@ const bestComboDisplay = $("bestCombo");
 const accuracyDisplay = $("accuracy");
 const saveStatus = $("saveStatus");
 
-// ---------- GAME STATE ----------
 const QUESTION_TIME = 30;
 
 let currentQuestion = 0;
@@ -48,19 +47,18 @@ let combo = 0;
 let bestCombo = 0;
 let timeLeft = QUESTION_TIME;
 let timerInterval = null;
+let nextQuestionTimeout = null;
 let locked = false;
 let soundEnabled = true;
 let audioContext = null;
 let playerName = "ZENITH PLAYER";
 
-// ---------- MEDICAL MISSIONS ----------
 const questions = [
   {
     specialty: "CARDIOLOGY",
     icon: "❤️",
     type: "CLINICAL CASE",
-    question:
-      "Un patient de 58 ans présente une douleur thoracique intense irradiant vers le bras gauche, avec sueurs froides. Quel diagnostic faut-il suspecter en priorité ?",
+    question: "Un patient de 58 ans présente une douleur thoracique intense irradiant vers le bras gauche, accompagnée de sueurs froides. Quel diagnostic faut-il suspecter en priorité ?",
     answers: [
       "Crise d'asthme",
       "Infarctus du myocarde",
@@ -68,47 +66,41 @@ const questions = [
       "Migraine"
     ],
     correct: 1,
-    explanation:
-      "La douleur thoracique irradiant vers le bras gauche avec sueurs froides est évocatrice d'un syndrome coronarien aigu. Une prise en charge urgente est nécessaire."
+    explanation: "Cette association peut évoquer un syndrome coronarien aigu et nécessite une évaluation médicale urgente."
   },
   {
     specialty: "NEUROLOGY",
     icon: "🧠",
     type: "EMERGENCY CASE",
-    question:
-      "Une patiente présente soudainement une faiblesse du bras droit et des difficultés à parler. Quelle est la priorité ?",
+    question: "Une patiente présente soudainement une faiblesse du bras droit et des difficultés à parler. Quelle est la priorité ?",
     answers: [
       "Attendre une heure",
-      "Donner un repas",
-      "Déclencher une prise en charge urgente pour suspicion d'AVC",
+      "Lui donner un repas",
+      "Déclencher immédiatement la prise en charge urgente pour suspicion d'AVC",
       "La laisser dormir"
     ],
     correct: 2,
-    explanation:
-      "Un déficit neurologique brutal peut signaler un AVC. Chaque minute compte : il faut activer immédiatement les secours et l'évaluation spécialisée."
+    explanation: "Un déficit neurologique brutal peut signaler un AVC. Chaque minute compte : les secours doivent être alertés immédiatement."
   },
   {
     specialty: "PNEUMOLOGY",
     icon: "🫁",
     type: "RESPIRATORY MISSION",
-    question:
-      "Un patient asthmatique présente une respiration sifflante et une difficulté respiratoire. Quel organe est principalement concerné ?",
+    question: "Quel système est principalement concerné par une crise d'asthme ?",
     answers: [
-      "Les reins",
+      "Le système urinaire",
       "Les bronches et les poumons",
       "Le pancréas",
       "La rate"
     ],
     correct: 1,
-    explanation:
-      "L'asthme provoque une inflammation et un rétrécissement des voies respiratoires, notamment des bronches."
+    explanation: "L'asthme entraîne une inflammation et un rétrécissement des voies respiratoires, notamment des bronches."
   },
   {
     specialty: "ENDOCRINOLOGY",
     icon: "🩸",
     type: "METABOLIC MISSION",
-    question:
-      "Un patient diabétique devient confus, transpire et tremble. Quelle cause faut-il envisager rapidement ?",
+    question: "Un patient diabétique devient confus, transpire et tremble. Quelle cause faut-il envisager rapidement ?",
     answers: [
       "Une hypoglycémie",
       "Une fracture",
@@ -116,15 +108,13 @@ const questions = [
       "Une myopie"
     ],
     correct: 0,
-    explanation:
-      "Confusion, sueurs et tremblements peuvent signaler une hypoglycémie. Il faut évaluer immédiatement la glycémie et suivre le protocole adapté à l'état du patient."
+    explanation: "Ces symptômes peuvent signaler une hypoglycémie. Il faut évaluer immédiatement la glycémie et suivre le protocole adapté."
   },
   {
     specialty: "INFECTIOUS DISEASES",
     icon: "🦠",
     type: "DIAGNOSTIC MISSION",
-    question:
-      "Un patient présente une fièvre, une toux et une fatigue importante. Quelle est la meilleure première approche ?",
+    question: "Un patient présente de la fièvre, une toux et une fatigue importante. Quelle est la meilleure première approche ?",
     answers: [
       "Prescrire automatiquement des antibiotiques",
       "Ignorer les symptômes",
@@ -132,15 +122,13 @@ const questions = [
       "Conclure immédiatement à une infection bactérienne"
     ],
     correct: 2,
-    explanation:
-      "Ces symptômes ont plusieurs causes possibles. L'évaluation clinique guide les examens et le traitement ; les antibiotiques ne sont pas systématiques."
+    explanation: "Ces symptômes ont plusieurs causes possibles. L'évaluation clinique guide les examens et le traitement."
   },
   {
     specialty: "ANATOMY LAB",
     icon: "🧬",
     type: "ANATOMY CHALLENGE",
-    question:
-      "Quel organe pompe le sang dans la circulation sanguine ?",
+    question: "Quel organe pompe le sang dans la circulation sanguine ?",
     answers: [
       "Le foie",
       "Le cœur",
@@ -148,31 +136,27 @@ const questions = [
       "La vessie"
     ],
     correct: 1,
-    explanation:
-      "Le cœur est une pompe musculaire qui propulse le sang vers les poumons et les autres organes."
+    explanation: "Le cœur propulse le sang vers les poumons et les autres organes."
   },
   {
     specialty: "RENAL MEDICINE",
     icon: "🫘",
     type: "ORGAN MISSION",
-    question:
-      "Quelle est la fonction principale des reins ?",
+    question: "Quelle est l'une des fonctions principales des reins ?",
     answers: [
       "Produire la bile",
       "Pomper le sang",
-      "Filtrer le sang et contribuer à l'équilibre hydrique et électrolytique",
+      "Filtrer le sang et réguler l'équilibre hydrique et électrolytique",
       "Digérer les aliments"
     ],
     correct: 2,
-    explanation:
-      "Les reins filtrent le sang, éliminent certains déchets dans l'urine et participent à la régulation de l'eau, des électrolytes et de l'équilibre acido-basique."
+    explanation: "Les reins éliminent certains déchets dans l'urine et participent à la régulation de l'eau et des électrolytes."
   },
   {
     specialty: "FIRST AID",
     icon: "🚑",
     type: "EMERGENCY PROTOCOL",
-    question:
-      "Une personne s'effondre, ne répond pas et ne respire pas normalement. Quelle action est prioritaire ?",
+    question: "Une personne s'effondre, ne répond pas et ne respire pas normalement. Quelle action est prioritaire ?",
     answers: [
       "Lui donner de l'eau",
       "La mettre debout",
@@ -180,15 +164,13 @@ const questions = [
       "Attendre sans agir"
     ],
     correct: 2,
-    explanation:
-      "Une personne inconsciente qui ne respire pas normalement nécessite une réponse d'urgence immédiate : appeler les secours, obtenir un défibrillateur et débuter la réanimation cardiopulmonaire."
+    explanation: "Il faut déclencher immédiatement les secours, obtenir un défibrillateur et commencer la réanimation cardiopulmonaire."
   },
   {
     specialty: "PHARMACOLOGY",
     icon: "💊",
     type: "PHARMACOLOGY MISSION",
-    question:
-      "Avant d'administrer un médicament, quelle vérification est essentielle ?",
+    question: "Avant d'administrer un médicament, quelle vérification est essentielle ?",
     answers: [
       "La couleur de la boîte uniquement",
       "L'identité du patient, le médicament, la dose, la voie et le moment d'administration",
@@ -196,15 +178,13 @@ const questions = [
       "L'avis d'un autre patient"
     ],
     correct: 1,
-    explanation:
-      "Les vérifications de sécurité avant l'administration aident à prévenir les erreurs médicamenteuses. Il faut aussi vérifier les allergies et suivre le protocole local."
+    explanation: "Les vérifications de sécurité et la recherche d'allergies contribuent à prévenir les erreurs médicamenteuses."
   },
   {
     specialty: "FINAL BOSS",
     icon: "👾",
-    type: "⚠️ FINAL BOSS — CLINICAL REASONING",
-    question:
-      "Un patient présente une douleur thoracique persistante, un essoufflement et une pâleur soudaine. Quelle est la meilleure décision ?",
+    type: "FINAL BOSS — CLINICAL REASONING",
+    question: "Un patient présente une douleur thoracique persistante, un essoufflement et une pâleur soudaine. Quelle est la meilleure décision ?",
     answers: [
       "Le faire marcher pour tester son endurance",
       "Attendre la fin du questionnaire",
@@ -212,12 +192,11 @@ const questions = [
       "Lui donner un médicament au hasard"
     ],
     correct: 2,
-    explanation:
-      "Une douleur thoracique persistante associée à un essoufflement peut signaler une urgence vitale. Il faut activer immédiatement les secours et ne pas retarder l'évaluation."
+    explanation: "Ces signes peuvent signaler une urgence vitale. Il faut activer immédiatement les secours sans retarder l'évaluation."
   }
 ];
 
-// ---------- SOUND ENGINE ----------
+// SOUND
 function playTone(frequency = 440, duration = 0.12, type = "sine") {
   if (!soundEnabled) return;
 
@@ -233,7 +212,7 @@ function playTone(frequency = 440, duration = 0.12, type = "sine") {
 
     oscillator.type = type;
     oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+    gain.gain.setValueAtTime(0.06, audioContext.currentTime);
     gain.gain.exponentialRampToValueAtTime(
       0.001,
       audioContext.currentTime + duration
@@ -250,15 +229,15 @@ function playTone(frequency = 440, duration = 0.12, type = "sine") {
 }
 
 function playCorrectSound() {
-  playTone(660, 0.1, "sine");
-  setTimeout(() => playTone(880, 0.16, "sine"), 100);
+  playTone(660, 0.1);
+  setTimeout(() => playTone(880, 0.16), 100);
 }
 
 function playWrongSound() {
   playTone(180, 0.22, "triangle");
 }
 
-// ---------- SCREEN MANAGEMENT ----------
+// SCREEN MANAGEMENT
 function showScreen(screen) {
   [homeScreen, gameScreen, resultScreen].forEach((item) => {
     if (item) item.classList.remove("active");
@@ -278,13 +257,13 @@ function shuffleArray(array) {
   return copy;
 }
 
-// ---------- START GAME ----------
+// START GAME
 function startGame() {
-  playerName = playerNameInput?.value.trim() || "ZENITH PLAYER";
+  clearInterval(timerInterval);
+  clearTimeout(nextQuestionTimeout);
 
-  if (playerName.length > 24) {
-    playerName = playerName.slice(0, 24);
-  }
+  playerName = playerNameInput?.value.trim() || "ZENITH PLAYER";
+  playerName = playerName.slice(0, 24);
 
   currentQuestion = 0;
   score = 0;
@@ -298,7 +277,7 @@ function startGame() {
   renderQuestion();
 }
 
-// ---------- RENDER QUESTION ----------
+// RENDER QUESTION
 function renderQuestion() {
   clearInterval(timerInterval);
   locked = false;
@@ -312,8 +291,7 @@ function renderQuestion() {
   }
 
   if (questionNumber) {
-    questionNumber.textContent =
-      `QUESTION ${currentQuestion + 1} / ${questions.length}`;
+    questionNumber.textContent = `QUESTION ${currentQuestion + 1} / ${questions.length}`;
   }
 
   if (timerDisplay) timerDisplay.textContent = timeLeft;
@@ -322,25 +300,24 @@ function renderQuestion() {
   if (specialtyDisplay) specialtyDisplay.textContent = q.specialty;
   if (organIcon) organIcon.textContent = q.icon;
   if (questionText) questionText.textContent = q.question;
+
   if (feedback) {
     feedback.textContent = q.type;
     feedback.className = "feedback";
   }
 
   if (progressBar) {
-    progressBar.style.width =
-      `${(currentQuestion / questions.length) * 100}%`;
+    progressBar.style.width = `${(currentQuestion / questions.length) * 100}%`;
   }
 
   if (answersContainer) {
     answersContainer.replaceChildren();
 
-    const randomizedAnswers = q.answers.map((answer, originalIndex) => ({
-      answer,
-      originalIndex
-    }));
+    const randomizedAnswers = shuffleArray(
+      q.answers.map((answer, originalIndex) => ({ answer, originalIndex }))
+    );
 
-    shuffleArray(randomizedAnswers).forEach((item, index) => {
+    randomizedAnswers.forEach((item, index) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "answer-btn";
@@ -356,7 +333,6 @@ function renderQuestion() {
 
       button.append(letter, text);
       button.addEventListener("click", () => chooseAnswer(button, item.originalIndex));
-
       answersContainer.appendChild(button);
     });
   }
@@ -367,7 +343,7 @@ function renderQuestion() {
 function updateTimer() {
   if (locked) return;
 
-  timeLeft--;
+  timeLeft = Math.max(0, timeLeft - 1);
 
   if (timerDisplay) timerDisplay.textContent = timeLeft;
 
@@ -381,7 +357,7 @@ function updateTimer() {
   }
 }
 
-// ---------- ANSWER LOGIC ----------
+// ANSWER LOGIC
 function chooseAnswer(button, selectedIndex) {
   if (locked) return;
 
@@ -389,6 +365,8 @@ function chooseAnswer(button, selectedIndex) {
   clearInterval(timerInterval);
 
   const q = questions[currentQuestion];
+  if (!q) return;
+
   const buttons = answersContainer?.querySelectorAll("button") || [];
 
   buttons.forEach((item) => {
@@ -411,9 +389,9 @@ function chooseAnswer(button, selectedIndex) {
     score += earned;
 
     if (button) button.classList.add("correct");
+
     if (feedback) {
-      feedback.textContent =
-        `✓ EXCELLENT ! +${earned} XP — ${q.explanation}`;
+      feedback.textContent = `✓ EXCELLENT ! +${earned} XP — ${q.explanation}`;
       feedback.className = "feedback success";
     }
 
@@ -424,8 +402,8 @@ function chooseAnswer(button, selectedIndex) {
     if (button) button.classList.add("wrong");
 
     if (feedback) {
-      feedback.textContent =
-        `${selectedIndex === -1 ? "⏱ TEMPS ÉCOULÉ !" : "✕ INCORRECT."} ${q.explanation}`;
+      const prefix = selectedIndex === -1 ? "⏱ TEMPS ÉCOULÉ !" : "✕ INCORRECT.";
+      feedback.textContent = `${prefix} ${q.explanation}`;
       feedback.className = "feedback error";
     }
 
@@ -436,12 +414,10 @@ function chooseAnswer(button, selectedIndex) {
   if (comboDisplay) comboDisplay.textContent = `x${combo}`;
 
   if (progressBar) {
-    progressBar.style.width =
-      `${((currentQuestion + 1) / questions.length) * 100}%`;
+    progressBar.style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
   }
 
-  // Give the player time to read the medical explanation.
-  setTimeout(() => {
+  nextQuestionTimeout = setTimeout(() => {
     currentQuestion++;
 
     if (currentQuestion < questions.length) {
@@ -452,33 +428,31 @@ function chooseAnswer(button, selectedIndex) {
   }, 2600);
 }
 
-// ---------- END GAME ----------
+// END GAME
 async function endGame() {
   clearInterval(timerInterval);
+  clearTimeout(nextQuestionTimeout);
   showScreen(resultScreen);
 
   const accuracy = Math.round((correctAnswers / questions.length) * 100);
 
   if (finalScore) finalScore.textContent = score;
-  if (correctCount) {
-    correctCount.textContent = `${correctAnswers} / ${questions.length}`;
-  }
+  if (correctCount) correctCount.textContent = `${correctAnswers} / ${questions.length}`;
   if (bestComboDisplay) bestComboDisplay.textContent = bestCombo;
   if (accuracyDisplay) accuracyDisplay.textContent = `${accuracy}%`;
 
-  if ($("resultTitle")) {
-    $("resultTitle").textContent =
-      correctAnswers === questions.length
-        ? "PERFECT MEDICAL LEGEND!"
-        : correctAnswers >= 7
-          ? "ELITE MEDICAL AGENT"
-          : correctAnswers >= 4
-            ? "RISING MEDICAL HERO"
-            : "MISSION COMPLETE";
+  const resultTitle = $("resultTitle");
+  if (resultTitle) {
+    resultTitle.textContent =
+      correctAnswers === questions.length ? "PERFECT MEDICAL LEGEND!" :
+      correctAnswers >= 7 ? "ELITE MEDICAL AGENT" :
+      correctAnswers >= 4 ? "RISING MEDICAL HERO" :
+      "MISSION COMPLETE";
   }
 
-  if ($("resultIcon")) {
-    $("resultIcon").textContent =
+  const resultIcon = $("resultIcon");
+  if (resultIcon) {
+    resultIcon.textContent =
       correctAnswers === questions.length ? "🏆" :
       correctAnswers >= 7 ? "🧬" :
       correctAnswers >= 4 ? "🩺" : "⚡";
@@ -490,17 +464,12 @@ async function endGame() {
   playTone(740, 0.25);
 }
 
-// ---------- SUPABASE SCORE SAVE ----------
+// SUPABASE SAVE
 async function saveScore() {
   try {
     const { error } = await db
       .from("zenith_scores")
-      .insert([
-        {
-          player_name: playerName,
-          score: score
-        }
-      ]);
+      .insert([{ player_name: playerName, score }]);
 
     if (error) throw error;
 
@@ -517,9 +486,9 @@ async function saveScore() {
   }
 }
 
-// ---------- LEADERBOARD MODAL ----------
+// LEADERBOARD
 function createLeaderboardButton() {
-  if ($("leaderboardButton")) return;
+  if ($("leaderboardButton") || !homeScreen) return;
 
   const button = document.createElement("button");
   button.id = "leaderboardButton";
@@ -528,8 +497,7 @@ function createLeaderboardButton() {
   button.textContent = "🏆 LEADERBOARD";
   button.addEventListener("click", showLeaderboard);
 
-  const home = homeScreen;
-  if (home) home.appendChild(button);
+  homeScreen.appendChild(button);
 }
 
 async function showLeaderboard() {
@@ -604,7 +572,7 @@ async function showLeaderboard() {
   }
 }
 
-// ---------- BUTTON EVENTS ----------
+// BUTTON EVENTS
 startButton?.addEventListener("click", startGame);
 
 playerNameInput?.addEventListener("keydown", (event) => {
@@ -615,6 +583,7 @@ replayButton?.addEventListener("click", startGame);
 
 homeButton?.addEventListener("click", () => {
   clearInterval(timerInterval);
+  clearTimeout(nextQuestionTimeout);
   showScreen(homeScreen);
 });
 
@@ -631,7 +600,6 @@ soundToggle?.addEventListener("click", () => {
   if (soundEnabled) playTone(600, 0.12);
 });
 
-// ---------- INITIALIZATION ----------
-document.addEventListener("DOMContentLoaded", createLeaderboardButton);
+// INITIALIZATION
 createLeaderboardButton();
 showScreen(homeScreen);
