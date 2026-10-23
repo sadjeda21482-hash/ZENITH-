@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07111f">
+
+  <title>ZENITH | Medical Battle</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="game.js" defer></script>
+</head>
+
+<body>
+  <div class="background-grid"></div>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Zenith Medical Battle">
+      <span class="brand-symbol">Z</span>
+      <span class="brand-copy">
+        <strong>ZENITH</strong>
+        <small>MEDICAL BATTLE</small>
+      </span>
+    </a>
+
+    <div class="topbar-right">
+      <span class="live-indicator"></span>
+      <span class="system-label">MEDICAL SYSTEM ONLINE</span>
+      <button class="button button-ghost" id="leaderboard-button">
+        🏆 Classement
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ACCUEIL -->
+    <section class="screen active" id="home-screen">
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">
+            <span class="eyebrow-line"></span>
+            LE CHALLENGE MÉDICAL ULTIME
+          </div>
+
+          <h1>
+            THINK LIKE A<br>
+            <span>PHYSICIAN.</span>
+          </h1>
+
+          <p class="hero-description">
+            Teste tes connaissances, résous des cas cliniques
+            et prouve que tu mérites ta place au sommet.
+          </p>
+
+          <div class="feature-list">
+            <div class="feature">
+              <span class="feature-icon">⚡</span>
+              <div>
+                <strong>Questions chronométrées</strong>
+                <small>Réfléchis vite, réponds juste.</small>
+              </div>
+            </div>
+
+            <div class="feature">
+              <span class="feature-icon">🧠</span>
+              <div>
+                <strong>Science & raisonnement</strong>
+                <small>Anatomie, physiologie et clinique.</small>
+              </div>
+            </div>
+
+            <div class="feature">
+              <span class="feature-icon">🏆</span>
+              <div>
+                <strong>Classement des champions</strong>
+                <small>Compare ton score aux autres joueurs.</small>
+              </div>
+            </div>
+          </div>
+
+          <form id="start-form" class="start-form">
+            <label for="player-name">IDENTIFICATION DU JOUEUR</label>
+
+            <div class="start-input-row">
+              <input
+                type="text"
+                id="player-name"
+                placeholder="Entre ton nom..."
+                maxlength="24"
+                autocomplete="nickname"
+                required
+              >
+
+              <button type="submit" class="button button-primary">
+                LANCER LE JEU <span>↗</span>
+              </button>
+            </div>
+
+            <p class="form-hint">
+              30 questions · Plusieurs disciplines · Un seul champion
+            </p>
+          </form>
+        </div>
+
+        <div class="hero-visual">
+          <div class="visual-orbit orbit-one"></div>
+          <div class="visual-orbit orbit-two"></div>
+
+          <div class="visual-tag tag-top">
+            <span class="tag-dot"></span>
+            NEURAL INTERFACE
+          </div>
+
+          <div class="medical-figure">
+            <div class="figure-head"></div>
+            <div class="figure-neck"></div>
+            <div class="figure-body"></div>
+            <div class="figure-arm figure-arm-left"></div>
+            <div class="figure-arm figure-arm-right"></div>
+            <div class="figure-leg figure-leg-left"></div>
+            <div class="figure-leg figure-leg-right"></div>
+            <div class="figure-heart">✦</div>
+            <div class="figure-cross">+</div>
+          </div>
+
+          <div class="visual-tag tag-bottom">
+            <span class="pulse-dot"></span>
+            BIOLOGY // KNOWLEDGE // PRECISION
+          </div>
+
+          <div class="floating-card floating-card-top">
+            <span class="floating-card-icon">♥</span>
+            <div>
+              <small>HEART RATE</small>
+              <strong>72 <span>BPM</span></strong>
+            </div>
+          </div>
+
+          <div class="floating-card floating-card-bottom">
+            <span class="floating-card-icon purple">✧</span>
+            <div>
+              <small>NEURAL ACTIVITY</small>
+              <strong>OPTIMAL</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-strip">
+        <div class="stat-item">
+          <strong>30</strong>
+          <span>QUESTIONS</span>
+        </div>
+
+        <div class="stat-divider"></div>
+
+        <div class="stat-item">
+          <strong>12</strong>
+          <span>DISCIPLINES</span>
+        </div>
+
+        <div class="stat-divider"></div>
+
+        <div class="stat-item">
+          <strong>01</strong>
+          <span>FINAL BOSS</span>
+        </div>
+
+        <div class="stat-divider"></div>
+
+        <div class="stat-item">
+          <strong>∞</strong>
+          <span>AMBITION</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- JEU -->
+    <section class="screen game-screen" id="game-screen">
+      <div class="game-topline">
+        <div>
+          <div class="eyebrow">
+            <span class="eyebrow-line"></span>
+            MISSION EN COURS
+          </div>
+          <h2 id="question-category">CARDIOLOGIE</h2>
+        </div>
+
+        <div class="game-player">
+          <span class="player-avatar">✦</span>
+          <div>
+            <small>JOUEUR</small>
+            <strong id="current-player">Joueur</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-panel">
+        <div class="progress-meta">
+          <span>PROGRESSION</span>
+          <strong id="question-counter">QUESTION 01 / 30</strong>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="game-layout">
+        <div class="question-panel">
+          <div class="question-meta">
+            <span class="question-tag" id="question-tag">KNOWLEDGE TEST</span>
+            <span class="difficulty-tag" id="difficulty-tag">NIVEAU I</span>
+          </div>
+
+          <h3 id="question-text">La question apparaîtra ici.</h3>
+
+          <div class="answers-grid" id="answers-grid"></div>
+
+          <div class="feedback-box" id="feedback-box" aria-live="polite">
+            <span id="feedback-icon">✦</span>
+            <div>
+              <strong id="feedback-title">Analyse en cours</strong>
+              <p id="feedback-text">Sélectionne une réponse pour continuer.</p>
+            </div>
+          </div>
+
+          <div class="question-footer">
+            <span>⚡ Chaque bonne réponse rapporte des points.</span>
+            <button id="next-button" class="button button-primary" disabled>
+              QUESTION SUIVANTE →
+            </button>
+          </div>
+        </div>
+
+        <aside class="mission-sidebar">
+          <div class="side-card score-card">
+            <div class="side-card-heading">
+              <span>SCORE ACTUEL</span>
+              <span class="tiny-icon">✧</span>
+            </div>
+
+            <div class="score-number" id="current-score">0000</div>
+            <div class="score-caption">POINTS DE CONNAISSANCE</div>
+
+            <div class="score-divider"></div>
+
+            <div class="score-row">
+              <span>Réponses justes</span>
+              <strong id="correct-count">0</strong>
+            </div>
+
+            <div class="score-row">
+              <span>Combo actuel</span>
+              <strong id="combo-count">×0</strong>
+            </div>
+          </div>
+
+          <div class="side-card">
+            <div class="side-card-heading">
+              <span>CHRONOMÈTRE</span>
+              <span class="tiny-icon">◷</span>
+            </div>
+
+            <div class="timer-number" id="timer-number">20<span>s</span></div>
+
+            <div class="timer-track">
+              <div class="timer-fill" id="timer-fill"></div>
+            </div>
+
+            <p class="side-note">Le temps est précieux, docteur.</p>
+          </div>
+
+          <div class="side-card mini-tip">
+            <span class="tip-icon">🧬</span>
+            <strong>MISSION DU JOUR</strong>
+            <p>Combine précision scientifique et raisonnement clinique.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- RÉSULTATS -->
+    <section class="screen" id="results-screen">
+      <div class="results-container">
+        <div class="result-emblem">✦</div>
+        <div class="eyebrow centered">
+          <span class="eyebrow-line"></span>
+          MISSION TERMINÉE
+          <span class="eyebrow-line"></span>
+        </div>
+
+        <h2 id="result-title">EXCELLENT TRAVAIL</h2>
+        <p class="result-subtitle" id="result-subtitle">
+          Le diagnostic de tes performances est prêt.
+        </p>
+
+        <div class="final-score-card">
+          <span>SCORE FINAL</span>
+          <strong id="final-score">0000</strong>
+          <small>POINTS</small>
+        </div>
+
+        <div class="results-stats">
+          <div>
+            <strong id="final-correct">0/30</strong>
+            <span>RÉPONSES JUSTES</span>
+          </div>
+          <div>
+            <strong id="final-accuracy">0%</strong>
+            <span>PRÉCISION</span>
+          </div>
+          <div>
+            <strong id="final-best-combo">×0</strong>
+            <span>MEILLEUR COMBO</span>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <button class="button button-primary" id="replay-button">
+            REJOUER ↻
+          </button>
+          <button class="button button-secondary" id="results-leaderboard-button">
+            🏆 CLASSEMENT
+          </button>
+        </div>
+
+        <p class="save-status" id="save-status" aria-live="polite">
+          Préparation des résultats...
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- CLASSEMENT -->
+  <div class="modal-overlay" id="leaderboard-modal" aria-hidden="true">
+    <div class="leaderboard-modal">
+      <button class="modal-close" id="close-leaderboard" aria-label="Fermer">
+        ×
+      </button>
+
+      <div class="eyebrow">
+        <span class="eyebrow-line"></span>
+        HALL OF FAME
+      </div>
+
+      <h2>LES <span>CHAMPIONS</span></h2>
+      <p class="modal-description">
+        Les meilleurs scores de la communauté Zenith.
+      </p>
+
+      <div class="leaderboard-list" id="leaderboard-list">
+        <div class="leaderboard-loading">Chargement du classement...</div>
+      </div>
+
+      <button class="button button-secondary leaderboard-refresh" id="refresh-leaderboard">
+        ↻ ACTUALISER
+      </button>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <span>ZENITH MEDICAL BATTLE</span>
+    <span>BUILT FOR CURIOUS MINDS · MADE FOR FUTURE PHYSICIANS</span>
+  </footer>
+</body>
+</html>
